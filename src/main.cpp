@@ -36,6 +36,20 @@ void onWebSocketEvent(WStype_t type, uint8_t * payload, size_t length) {
 
 }
 
+void websocketTask(void *pvParameters) {
+    // Connect to websocket server
+    Serial.print("WS running on core ");
+    Serial.println(xPortGetCoreID());
+
+    webSocket.onEvent(onWebSocketEvent);
+    webSocket.begin(WEBSOCKET_IP, WEBSOCKET_PORT, "/");
+    while(true) {
+        webSocket.loop();
+    }
+}
+
+TaskHandle_t wsTask;
+
 void setup() {
     setCpuFrequencyMhz(240);
 
@@ -55,11 +69,12 @@ void setup() {
     Serial.print("Connected! IP address: ");
     Serial.println(WiFi.localIP());
 
-    // Connect to websocket server
-    webSocket.onEvent(onWebSocketEvent);
-    webSocket.begin(WEBSOCKET_IP, WEBSOCKET_PORT, "/");
+    Serial.print("Main running on core ");
+    Serial.println(xPortGetCoreID());
+
+    xTaskCreatePinnedToCore(websocketTask, "WS Task", 10000, NULL, 0, &wsTask, 0);
 }
 
 void loop() {
-    webSocket.loop();
+    delay(1);
 }
