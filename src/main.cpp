@@ -3,6 +3,9 @@
 #include <WiFi.h>
 #include <WebSocketsClient.h>
 #include "connection-details.h"
+#include "asyncClientTask.h"
+#include <esp_wifi.h>
+
 
 WebSocketsClient webSocket;
 
@@ -69,10 +72,21 @@ void setup() {
     Serial.print("Connected! IP address: ");
     Serial.println(WiFi.localIP());
 
+    wifi_ps_type_t ps_type;
+    esp_wifi_get_ps(&ps_type);
+
+    Serial.print("Powersaving type: ");
+    Serial.println(ps_type);
+    Serial.println(WIFI_PS_MAX_MODEM);
+    Serial.println(WIFI_PS_NONE);
+    Serial.println(WIFI_PS_MIN_MODEM);
+    esp_wifi_set_ps(WIFI_PS_NONE);
+
     Serial.print("Main running on core ");
     Serial.println(xPortGetCoreID());
 
-    xTaskCreatePinnedToCore(websocketTask, "WS Task", 10000, NULL, 0, &wsTask, 0);
+    //xTaskCreatePinnedToCore(websocketTask, "WS Task", 10000, NULL, 0, &wsTask, 0);
+    xTaskCreatePinnedToCore(runAsyncClientTask, "async client", 10000, NULL, 0, &wsTask, 0);
 }
 
 void loop() {
